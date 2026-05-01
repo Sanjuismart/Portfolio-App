@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
  
 const NAV_LINKS = ["About", "Skills", "Experience", "Projects", "Education", "Contact"];
  
@@ -41,243 +41,373 @@ const TIMELINE = [
 ];
  
 const EDUCATION = [
-  { degree: "B.E – Information Science & Engineering", inst: "Visvesvaraya Technological University", year: "2021–2025", score: "CGPA: 7.4" },
+  { degree: "B.E - Information Science & Engineering", inst: "Visvesvaraya Technological University", year: "2021-2025", score: "CGPA: 7.4" },
   { degree: "Pre-University", inst: "SS Margol PU College, Shahabad", year: "", score: "64%" },
   { degree: "SSLC", inst: "Mini Rose Public School, Shahabad", year: "", score: "58.8%" },
 ];
  
-export default function Portfolio() {
-  const [active, setActive] = useState("About");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [typed, setTyped] = useState("");
-  const [showCursor, setShowCursor] = useState(true);
-  const titles = ["Full Stack Developer", "React.js Enthusiast", "API Architect", "Problem Solver"];
-  const titleRef = useRef(0);
-  const charRef = useRef(0);
-  const dirRef = useRef(1);
+const ACHIEVEMENTS = [
+  "Built a full-stack application end-to-end (UI + Backend + Database)",
+  "Improved API performance using optimization and caching",
+  "Participated in Agile development life cycle (sprints, stand-ups)",
+];
  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const cur = titles[titleRef.current];
+const TITLES = ["Full Stack Developer", "React.js Enthusiast", "API Architect", "Problem Solver"];
+ 
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0a0a0f; }
+  ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 2px; }
+  .nav-link { transition: color 0.2s; cursor: pointer; }
+  .nav-link:hover { color: #a78bfa; }
+  .skill-pill { transition: all 0.2s; cursor: default; }
+  .skill-pill:hover { background: #7c3aed !important; color: #fff !important; transform: translateY(-2px); }
+  .card { transition: transform 0.25s, box-shadow 0.25s; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(124,58,237,0.25) !important; }
+  .cta-btn { transition: all 0.2s; }
+  .cta-btn:hover { opacity: 0.85; transform: translateY(-2px); }
+  .ghost-btn { transition: all 0.2s; }
+  .ghost-btn:hover { background: rgba(124,58,237,0.15) !important; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-12px); } }
+  @keyframes pulseRing { 0% { box-shadow:0 0 0 0 rgba(124,58,237,0.5); } 70% { box-shadow:0 0 0 14px rgba(124,58,237,0); } 100% { box-shadow:0 0 0 0 rgba(124,58,237,0); } }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  .avatar { animation: float 4s ease-in-out infinite, pulseRing 2.5s ease-out infinite; }
+  .anim-up { animation: fadeUp 0.7s ease both; }
+  .anim-up-2 { animation: fadeUp 0.7s 0.15s ease both; }
+  .anim-up-3 { animation: fadeUp 0.7s 0.3s ease both; }
+  .mobile-menu { animation: slideDown 0.2s ease both; }
+  .dot-grid { background-image: radial-gradient(rgba(124,58,237,0.18) 1px, transparent 1px); background-size: 28px 28px; }
+  .glow-line { background: linear-gradient(90deg, transparent, #7c3aed, transparent); height: 1px; }
+  .hamburger { display: none !important; background: none; border: none; cursor: pointer; padding: 4px; align-items: center; justify-content: center; }
+  @media (max-width: 768px) {
+    .desktop-nav { display: none !important; }
+    .desktop-gh { display: none !important; }
+    .hamburger { display: flex !important; }
+    .hero-name { font-size: 2.3rem !important; }
+    .section-title { font-size: 1.7rem !important; }
+    .cta-row { flex-direction: column !important; align-items: stretch !important; }
+    .cta-row > * { width: 100% !important; text-align: center !important; display: flex !important; justify-content: center !important; }
+    .skills-grid { grid-template-columns: 1fr 1fr !important; }
+    .contact-grid { flex-direction: column !important; }
+    .contact-card { min-width: unset !important; width: 100% !important; flex: unset !important; }
+    .edu-row { flex-direction: column !important; align-items: flex-start !important; }
+    .exp-header { flex-direction: column !important; align-items: flex-start !important; }
+  }
+  @media (max-width: 420px) {
+    .hero-name { font-size: 1.9rem !important; }
+    .skills-grid { grid-template-columns: 1fr !important; }
+  }
+`;
+ 
+export default function Portfolio() {
+  var activeState = useState("About");
+  var active = activeState[0];
+  var setActive = activeState[1];
+ 
+  var menuState = useState(false);
+  var setMenuOpen = menuState[1];
+ 
+  var typedState = useState("");
+  var typed = typedState[0];
+  var setTyped = typedState[1];
+ 
+  var cursorState = useState(true);
+  var showCursor = cursorState[0];
+  var setShowCursor = cursorState[1];
+ 
+  var menuOpenState = useState(false);
+  var menuOpen = menuOpenState[0];
+  var setMobileMenu = menuOpenState[1];
+ 
+  var titleRef = useRef(0);
+  var charRef = useRef(0);
+  var dirRef = useRef(1);
+ 
+  // Typing effect — TITLES is defined outside component so no dependency needed
+  useEffect(function () {
+    var interval = setInterval(function () {
+      var cur = TITLES[titleRef.current];
       if (dirRef.current === 1) {
         charRef.current++;
         setTyped(cur.slice(0, charRef.current));
         if (charRef.current === cur.length) {
           dirRef.current = -1;
-          setTimeout(() => {}, 1200);
         }
       } else {
         charRef.current--;
         setTyped(cur.slice(0, charRef.current));
         if (charRef.current === 0) {
           dirRef.current = 1;
-          titleRef.current = (titleRef.current + 1) % titles.length;
+          titleRef.current = (titleRef.current + 1) % TITLES.length;
         }
       }
     }, 80);
-    return () => clearInterval(interval);
-  }, []);
+    return function () { clearInterval(interval); };
+  }, [setTyped]);
  
-  useEffect(() => {
-    const c = setInterval(() => setShowCursor(p => !p), 500);
-    return () => clearInterval(c);
-  }, []);
+  // Cursor blink
+  useEffect(function () {
+    var c = setInterval(function () {
+      setShowCursor(function (p) { return !p; });
+    }, 500);
+    return function () { clearInterval(c); };
+  }, [setShowCursor]);
  
-  const scrollTo = (id) => {
-    document.getElementById(id.toLowerCase())?.scrollIntoView({ behavior: "smooth" });
+  // Close mobile menu on outside click
+  useEffect(function () {
+    if (!menuOpen) return;
+    var handler = function () { setMobileMenu(false); };
+    document.addEventListener("click", handler);
+    return function () { document.removeEventListener("click", handler); };
+  }, [menuOpen, setMobileMenu]);
+ 
+  var scrollTo = useCallback(function (id) {
+    var el = document.getElementById(id.toLowerCase());
+    if (el) el.scrollIntoView({ behavior: "smooth" });
     setActive(id);
+    setMobileMenu(false);
     setMenuOpen(false);
-  };
+  }, [setActive, setMobileMenu, setMenuOpen]);
  
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0a0a0f", color: "#e8e6f0", minHeight: "100vh", overflowX: "hidden" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0a0a0f; } ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 2px; }
-        html { scroll-behavior: smooth; }
-        .nav-link { transition: color 0.2s; cursor: pointer; } .nav-link:hover { color: #a78bfa; }
-        .skill-pill { transition: all 0.2s; } .skill-pill:hover { background: #7c3aed !important; color: #fff !important; transform: translateY(-2px); }
-        .card { transition: transform 0.25s, box-shadow 0.25s; } .card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(124,58,237,0.25) !important; }
-        .cta-btn { transition: all 0.2s; } .cta-btn:hover { background: #6d28d9 !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,0.4); }
-        .ghost-btn { transition: all 0.2s; } .ghost-btn:hover { background: rgba(124,58,237,0.15) !important; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(24px);} to {opacity:1; transform:translateY(0);} }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes pulse-ring { 0%{box-shadow:0 0 0 0 rgba(124,58,237,0.5)} 70%{box-shadow:0 0 0 14px rgba(124,58,237,0)} 100%{box-shadow:0 0 0 0 rgba(124,58,237,0)} }
-        .avatar { animation: float 4s ease-in-out infinite, pulse-ring 2.5s ease-out infinite; }
-        .hero-text { animation: fadeUp 0.7s ease both; }
-        .hero-sub { animation: fadeUp 0.7s 0.15s ease both; }
-        .hero-ctas { animation: fadeUp 0.7s 0.3s ease both; }
-        .section-fade { animation: fadeUp 0.6s ease both; }
-        .dot-grid { background-image: radial-gradient(rgba(124,58,237,0.18) 1px, transparent 1px); background-size: 28px 28px; }
-        .glow-line { background: linear-gradient(90deg, transparent, #7c3aed, transparent); height: 1px; }
-        @media (max-width: 640px) { .hero-name { font-size: 2.6rem !important; } .section-title { font-size: 1.8rem !important; } }
-      `}</style>
+      <style>{CSS}</style>
  
       {/* NAV */}
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(10,10,15,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(124,58,237,0.15)", padding: "0 2rem" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 200, background: "rgba(10,10,15,0.92)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(124,58,237,0.15)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, padding: "0 1.2rem" }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.2rem", color: "#a78bfa", letterSpacing: 1 }}>SANJU</span>
-          <div style={{ display: "flex", gap: "1.8rem" }} className="desktop-nav">
-            {NAV_LINKS.map(l => (
-              <span key={l} className="nav-link" onClick={() => scrollTo(l)} style={{ fontSize: "0.88rem", fontWeight: 500, color: active === l ? "#a78bfa" : "#9ca3af", letterSpacing: 0.5 }}>{l}</span>
-            ))}
+ 
+          <div className="desktop-nav" style={{ display: "flex", gap: "1.8rem" }}>
+            {NAV_LINKS.map(function (l) {
+              return (
+                <span key={l} className="nav-link" onClick={function () { scrollTo(l); }}
+                  style={{ fontSize: "0.88rem", fontWeight: 500, color: active === l ? "#a78bfa" : "#9ca3af", letterSpacing: 0.5 }}>
+                  {l}
+                </span>
+              );
+            })}
           </div>
-          <a href="https://github.com/Sanjuismart" target="_blank" rel="noopener noreferrer" style={{ background: "#7c3aed", color: "#fff", padding: "6px 16px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }} className="cta-btn">GitHub</a>
+ 
+          <a className="cta-btn desktop-gh" href="https://github.com/Sanjuismart" target="_blank" rel="noopener noreferrer"
+            style={{ background: "#7c3aed", color: "#fff", padding: "6px 16px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+            GitHub
+          </a>
+ 
+          <button className="hamburger" onClick={function (e) { e.stopPropagation(); setMobileMenu(function (o) { return !o; }); }} aria-label="Menu">
+            {menuOpen
+              ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+            }
+          </button>
         </div>
+ 
+        {menuOpen && (
+          <div className="mobile-menu" onClick={function (e) { e.stopPropagation(); }}
+            style={{ background: "rgba(10,10,15,0.98)", borderTop: "1px solid rgba(124,58,237,0.15)", paddingBottom: "0.8rem" }}>
+            {NAV_LINKS.map(function (l) {
+              return (
+                <div key={l} onClick={function () { scrollTo(l); }}
+                  style={{ padding: "0.85rem 1.5rem", fontSize: "0.95rem", fontWeight: 500, color: active === l ? "#a78bfa" : "#d1d5db", cursor: "pointer", borderLeft: active === l ? "3px solid #7c3aed" : "3px solid transparent" }}>
+                  {l}
+                </div>
+              );
+            })}
+            <div style={{ padding: "0.5rem 1.5rem" }}>
+              <a href="https://github.com/Sanjuismart" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-block", background: "#7c3aed", color: "#fff", padding: "8px 20px", borderRadius: 20, fontSize: "0.85rem", fontWeight: 600, textDecoration: "none" }}>
+                GitHub
+              </a>
+            </div>
+          </div>
+        )}
       </nav>
  
       {/* HERO */}
-      <section id="about" className="dot-grid" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 80, paddingBottom: 60, padding: "80px 2rem 60px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-          <div className="avatar" style={{ width: 110, height: 110, borderRadius: "50%", background: "linear-gradient(135deg, #7c3aed, #a78bfa)", margin: "0 auto 2rem", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.8rem", fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", userSelect: "none" }}>S</div>
+      <section id="about" className="dot-grid" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "100px 1.5rem 60px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center", width: "100%" }}>
+          <div className="avatar" style={{ width: 100, height: 100, borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#a78bfa)", margin: "0 auto 1.8rem", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem", fontFamily: "'Syne',sans-serif", fontWeight: 800, color: "#fff", userSelect: "none" }}>S</div>
  
-          <p className="hero-sub" style={{ color: "#7c3aed", fontWeight: 600, letterSpacing: 3, fontSize: "0.78rem", textTransform: "uppercase", marginBottom: "0.8rem" }}>Available for Opportunities</p>
+          <p className="anim-up-2" style={{ color: "#7c3aed", fontWeight: 600, letterSpacing: 3, fontSize: "0.72rem", textTransform: "uppercase", marginBottom: "0.8rem" }}>Available for Opportunities</p>
  
-          <h1 className="hero-name hero-text" style={{ fontFamily: "'Syne', sans-serif", fontSize: "3.8rem", fontWeight: 800, lineHeight: 1.1, marginBottom: "1.2rem", background: "linear-gradient(135deg, #e8e6f0 30%, #a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h1 className="hero-name anim-up" style={{ fontFamily: "'Syne',sans-serif", fontSize: "3.4rem", fontWeight: 800, lineHeight: 1.1, marginBottom: "1.2rem", background: "linear-gradient(135deg,#e8e6f0 30%,#a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Hi, I'm Sanju
           </h1>
  
-          <div className="hero-sub" style={{ fontSize: "1.4rem", fontWeight: 500, color: "#a78bfa", marginBottom: "1.4rem", minHeight: 36 }}>
+          <div className="anim-up-2" style={{ fontSize: "1.2rem", fontWeight: 500, color: "#a78bfa", marginBottom: "1.2rem", minHeight: 30 }}>
             {typed}<span style={{ opacity: showCursor ? 1 : 0, color: "#7c3aed" }}>|</span>
           </div>
  
-          <p className="hero-sub" style={{ color: "#9ca3af", fontSize: "1rem", lineHeight: 1.75, maxWidth: 620, margin: "0 auto 2.4rem" }}>
-            Full Stack Developer passionate about building responsive, scalable web applications using React.js, Node.js, Express.js and MongoDB. Strong in REST APIs, Agile practices and clean code.
+          <p className="anim-up-2" style={{ color: "#9ca3af", fontSize: "0.95rem", lineHeight: 1.8, maxWidth: 580, margin: "0 auto 2.2rem" }}>
+            Full Stack Developer passionate about building responsive, scalable web applications using React.js, Node.js, Express.js and MongoDB.
           </p>
  
-          <div className="hero-ctas" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="cta-btn" onClick={() => scrollTo("Projects")} style={{ background: "#7c3aed", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 28, fontWeight: 600, fontSize: "0.95rem", cursor: "pointer" }}>View Projects</button>
-            <button className="ghost-btn" onClick={() => scrollTo("Contact")} style={{ background: "transparent", color: "#a78bfa", border: "1.5px solid #7c3aed", padding: "12px 28px", borderRadius: 28, fontWeight: 600, fontSize: "0.95rem", cursor: "pointer" }}>Contact Me</button>
-            <a href="https://www.linkedin.com/in/sanju-kumbar-986709296" target="_blank" rel="noopener noreferrer" style={{ background: "#0a66c2", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 28, fontWeight: 600, fontSize: "0.95rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }} className="cta-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          <div className="anim-up-3 cta-row" style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="cta-btn" onClick={function () { scrollTo("Projects"); }}
+              style={{ background: "#7c3aed", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 28, fontWeight: 600, fontSize: "0.9rem", cursor: "pointer" }}>
+              View Projects
+            </button>
+            <button className="ghost-btn" onClick={function () { scrollTo("Contact"); }}
+              style={{ background: "transparent", color: "#a78bfa", border: "1.5px solid #7c3aed", padding: "12px 24px", borderRadius: 28, fontWeight: 600, fontSize: "0.9rem", cursor: "pointer" }}>
+              Contact Me
+            </button>
+            <a href="https://www.linkedin.com/in/sanju-kumbar-986709296" target="_blank" rel="noopener noreferrer" className="cta-btn"
+              style={{ background: "#0a66c2", color: "#fff", padding: "12px 22px", borderRadius: 28, fontWeight: 600, fontSize: "0.9rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
               LinkedIn
             </a>
           </div>
  
-          <div style={{ display: "flex", gap: "2.5rem", justifyContent: "center", marginTop: "3rem", flexWrap: "wrap" }}>
-            {[["6 Months", "Experience"], ["2", "Projects"], ["10+", "Technologies"], ["7.4", "CGPA"]].map(([num, label]) => (
-              <div key={label} style={{ textAlign: "center" }}>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.8rem", fontWeight: 800, color: "#a78bfa" }}>{num}</div>
-                <div style={{ fontSize: "0.75rem", color: "#6b7280", letterSpacing: 1, textTransform: "uppercase" }}>{label}</div>
-              </div>
-            ))}
+          <div style={{ display: "flex", gap: "2rem", justifyContent: "center", marginTop: "3rem", flexWrap: "wrap" }}>
+            {[["6 Mo", "Experience"], ["2", "Projects"], ["10+", "Technologies"], ["7.4", "CGPA"]].map(function (item) {
+              return (
+                <div key={item[1]} style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#a78bfa" }}>{item[0]}</div>
+                  <div style={{ fontSize: "0.68rem", color: "#6b7280", letterSpacing: 1, textTransform: "uppercase" }}>{item[1]}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
  
-      <div className="glow-line" style={{ margin: "0 2rem" }} />
+      <div className="glow-line" style={{ margin: "0 1.2rem" }} />
  
       {/* SKILLS */}
-      <section id="skills" style={{ padding: "80px 2rem" }}>
+      <section id="skills" style={{ padding: "70px 1.5rem" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <SectionHeader title="Technical Skills" sub="Technologies I work with" />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem", marginTop: "2.5rem" }}>
-            {Object.entries(SKILLS).map(([cat, items]) => (
-              <div key={cat} className="card" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 16, padding: "1.5rem" }}>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#a78bfa", marginBottom: "1rem", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: 2 }}>{cat}</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {items.map(s => (
-                    <span key={s} className="skill-pill" style={{ background: "rgba(124,58,237,0.12)", color: "#c4b5fd", padding: "4px 10px", borderRadius: 20, fontSize: "0.78rem", fontWeight: 500, cursor: "default", border: "1px solid rgba(124,58,237,0.2)" }}>{s}</span>
-                  ))}
+          <div className="skills-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1.2rem", marginTop: "2.2rem" }}>
+            {Object.keys(SKILLS).map(function (cat) {
+              var items = SKILLS[cat];
+              return (
+                <div key={cat} className="card" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 16, padding: "1.2rem" }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: "#a78bfa", marginBottom: "0.8rem", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: 2 }}>{cat}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+                    {items.map(function (s) {
+                      return (
+                        <span key={s} className="skill-pill" style={{ background: "rgba(124,58,237,0.12)", color: "#c4b5fd", padding: "3px 9px", borderRadius: 20, fontSize: "0.75rem", fontWeight: 500, border: "1px solid rgba(124,58,237,0.2)" }}>{s}</span>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
  
-      <div className="glow-line" style={{ margin: "0 2rem" }} />
+      <div className="glow-line" style={{ margin: "0 1.2rem" }} />
  
       {/* EXPERIENCE */}
-      <section id="experience" style={{ padding: "80px 2rem" }}>
+      <section id="experience" style={{ padding: "70px 1.5rem" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <SectionHeader title="Experience" sub="Where I've worked" />
-          {TIMELINE.map((t, i) => (
-            <div key={i} className="card" style={{ marginTop: "2.5rem", background: "#111118", border: "1px solid rgba(124,58,237,0.25)", borderRadius: 20, padding: "2rem", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: "linear-gradient(180deg,#7c3aed,#a78bfa)" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: "0.5rem" }}>
-                <div>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.15rem", fontWeight: 700, color: "#e8e6f0" }}>{t.role}</div>
-                  <div style={{ color: "#a78bfa", fontWeight: 600, fontSize: "0.9rem" }}>{t.company}</div>
+          {TIMELINE.map(function (t, i) {
+            return (
+              <div key={i} className="card" style={{ marginTop: "2rem", background: "#111118", border: "1px solid rgba(124,58,237,0.25)", borderRadius: 20, padding: "1.6rem 1.6rem 1.6rem 2rem", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: "linear-gradient(180deg,#7c3aed,#a78bfa)" }} />
+                <div className="exp-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: "0.5rem" }}>
+                  <div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.05rem", fontWeight: 700, color: "#e8e6f0", lineHeight: 1.3 }}>{t.role}</div>
+                    <div style={{ color: "#a78bfa", fontWeight: 600, fontSize: "0.88rem", marginTop: 3 }}>{t.company}</div>
+                  </div>
+                  <span style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa", padding: "4px 12px", borderRadius: 20, fontSize: "0.76rem", fontWeight: 600, border: "1px solid rgba(124,58,237,0.3)", whiteSpace: "nowrap" }}>{t.duration} - {t.year}</span>
                 </div>
-                <span style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa", padding: "4px 12px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 600, height: "fit-content", border: "1px solid rgba(124,58,237,0.3)" }}>{t.duration} · {t.year}</span>
+                <ul style={{ marginTop: "1rem", paddingLeft: "1.1rem", display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                  {t.points.map(function (p, j) {
+                    return <li key={j} style={{ color: "#9ca3af", fontSize: "0.875rem", lineHeight: 1.7 }}>{p}</li>;
+                  })}
+                </ul>
               </div>
-              <ul style={{ marginTop: "1rem", paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {t.points.map((p, j) => <li key={j} style={{ color: "#9ca3af", fontSize: "0.9rem", lineHeight: 1.65 }}>{p}</li>)}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
  
-      <div className="glow-line" style={{ margin: "0 2rem" }} />
+      <div className="glow-line" style={{ margin: "0 1.2rem" }} />
  
       {/* PROJECTS */}
-      <section id="projects" style={{ padding: "80px 2rem" }}>
+      <section id="projects" style={{ padding: "70px 1.5rem" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <SectionHeader title="Projects" sub="Things I've built" />
-          <div style={{ display: "grid", gap: "1.5rem", marginTop: "2.5rem" }}>
-            {PROJECTS.map((p, i) => (
-              <div key={i} className="card" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 20, padding: "2rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-                  <span style={{ fontSize: "1.8rem" }}>{p.emoji}</span>
-                  <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.2rem", fontWeight: 700, color: "#e8e6f0" }}>{p.title}</h3>
+          <div style={{ display: "grid", gap: "1.2rem", marginTop: "2.2rem" }}>
+            {PROJECTS.map(function (p, i) {
+              return (
+                <div key={i} className="card" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 20, padding: "1.6rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "1rem" }}>
+                    <span style={{ fontSize: "1.6rem" }}>{p.emoji}</span>
+                    <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.1rem", fontWeight: 700, color: "#e8e6f0" }}>{p.title}</h3>
+                  </div>
+                  <ul style={{ paddingLeft: "1.1rem", display: "flex", flexDirection: "column", gap: "0.45rem", marginBottom: "1.2rem" }}>
+                    {p.points.map(function (pt, j) {
+                      return <li key={j} style={{ color: "#9ca3af", fontSize: "0.875rem", lineHeight: 1.7 }}>{pt}</li>;
+                    })}
+                  </ul>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+                    {p.tags.map(function (tag) {
+                      return <span key={tag} className="skill-pill" style={{ background: "rgba(124,58,237,0.12)", color: "#c4b5fd", padding: "3px 10px", borderRadius: 20, fontSize: "0.72rem", border: "1px solid rgba(124,58,237,0.2)" }}>{tag}</span>;
+                    })}
+                  </div>
                 </div>
-                <ul style={{ paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.2rem" }}>
-                  {p.points.map((pt, j) => <li key={j} style={{ color: "#9ca3af", fontSize: "0.9rem", lineHeight: 1.65 }}>{pt}</li>)}
-                </ul>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {p.tags.map(t => <span key={t} className="skill-pill" style={{ background: "rgba(124,58,237,0.12)", color: "#c4b5fd", padding: "3px 10px", borderRadius: 20, fontSize: "0.75rem", border: "1px solid rgba(124,58,237,0.2)" }}>{t}</span>)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
  
-      <div className="glow-line" style={{ margin: "0 2rem" }} />
+      <div className="glow-line" style={{ margin: "0 1.2rem" }} />
  
       {/* EDUCATION */}
-      <section id="education" style={{ padding: "80px 2rem" }}>
+      <section id="education" style={{ padding: "70px 1.5rem" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <SectionHeader title="Education" sub="My academic background" />
-          <div style={{ marginTop: "2.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {EDUCATION.map((e, i) => (
-              <div key={i} className="card" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.15)", borderRadius: 16, padding: "1.4rem 1.8rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <div>
-                  <div style={{ fontWeight: 600, color: "#e8e6f0", fontSize: "0.95rem" }}>{e.degree}</div>
-                  <div style={{ color: "#6b7280", fontSize: "0.82rem", marginTop: 4 }}>{e.inst} {e.year && `· ${e.year}`}</div>
+          <div style={{ marginTop: "2.2rem", display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+            {EDUCATION.map(function (e, i) {
+              return (
+                <div key={i} className="card edu-row" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.15)", borderRadius: 16, padding: "1.2rem 1.4rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, color: "#e8e6f0", fontSize: "0.92rem", lineHeight: 1.4 }}>{e.degree}</div>
+                    <div style={{ color: "#6b7280", fontSize: "0.78rem", marginTop: 4 }}>{e.inst}{e.year ? " - " + e.year : ""}</div>
+                  </div>
+                  <span style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa", padding: "4px 12px", borderRadius: 20, fontSize: "0.8rem", fontWeight: 700, border: "1px solid rgba(124,58,237,0.25)", whiteSpace: "nowrap" }}>{e.score}</span>
                 </div>
-                <span style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa", padding: "4px 14px", borderRadius: 20, fontSize: "0.82rem", fontWeight: 700, border: "1px solid rgba(124,58,237,0.25)" }}>{e.score}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
  
-          {/* Achievements */}
-          <div style={{ marginTop: "3rem" }}>
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.1rem", fontWeight: 700, color: "#a78bfa", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: 1.5, fontSize: "0.78rem" }}>Key Achievements</h3>
+          <div style={{ marginTop: "2.5rem" }}>
+            <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: "#a78bfa", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: 1.5, fontSize: "0.72rem" }}>Key Achievements</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-              {["Built a full-stack application end-to-end (UI + Backend + Database)", "Improved API performance using optimization and caching", "Participated in Agile development life cycle (sprints, stand-ups)"].map((a, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", color: "#9ca3af", fontSize: "0.9rem" }}>
-                  <span style={{ color: "#7c3aed", marginTop: 3, flexShrink: 0 }}>▸</span>{a}
-                </div>
-              ))}
+              {ACHIEVEMENTS.map(function (a, i) {
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "0.7rem", color: "#9ca3af", fontSize: "0.875rem", lineHeight: 1.65 }}>
+                    <span style={{ color: "#7c3aed", marginTop: 4, flexShrink: 0 }}>▸</span>
+                    {a}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
  
-      <div className="glow-line" style={{ margin: "0 2rem" }} />
+      <div className="glow-line" style={{ margin: "0 1.2rem" }} />
  
       {/* CONTACT */}
-      <section id="contact" style={{ padding: "80px 2rem 60px" }}>
+      <section id="contact" style={{ padding: "70px 1.5rem 60px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <SectionHeader title="Contact" sub="Let's build something together" />
-          <p style={{ color: "#9ca3af", fontSize: "0.95rem", lineHeight: 1.75, margin: "1.5rem 0 2.5rem" }}>
+          <p style={{ color: "#9ca3af", fontSize: "0.92rem", lineHeight: 1.8, margin: "1.2rem 0 2rem" }}>
             I'm open to full-time roles, internships and freelance projects. Feel free to reach out!
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
+          <div className="contact-grid" style={{ display: "flex", flexWrap: "wrap", gap: "0.9rem", justifyContent: "center" }}>
             <ContactCard icon="✉️" label="Email" value="sanjukumbar408@gmail.com" href="mailto:sanjukumbar408@gmail.com" />
             <ContactCard icon="📞" label="Phone" value="+91 8762374480" href="tel:+918762374480" />
             <ContactCard icon="💼" label="LinkedIn" value="sanju-kumbar" href="https://www.linkedin.com/in/sanju-kumbar-986709296" />
@@ -287,29 +417,30 @@ export default function Portfolio() {
       </section>
  
       {/* FOOTER */}
-      <footer style={{ textAlign: "center", padding: "1.5rem", borderTop: "1px solid rgba(124,58,237,0.15)", color: "#4b5563", fontSize: "0.8rem" }}>
-        Designed & Built by <span style={{ color: "#a78bfa", fontWeight: 600 }}>Sanju</span> · {new Date().getFullYear()}
+      <footer style={{ textAlign: "center", padding: "1.4rem 1rem", borderTop: "1px solid rgba(124,58,237,0.15)", color: "#4b5563", fontSize: "0.78rem" }}>
+        Designed &amp; Built by <span style={{ color: "#a78bfa", fontWeight: 600 }}>Sanju</span> · {new Date().getFullYear()}
       </footer>
     </div>
   );
 }
  
-function SectionHeader({ title, sub }) {
+function SectionHeader(props) {
   return (
-    <div className="section-fade">
-      <p style={{ color: "#7c3aed", fontWeight: 600, letterSpacing: 3, fontSize: "0.72rem", textTransform: "uppercase", marginBottom: "0.5rem" }}>{sub}</p>
-      <h2 className="section-title" style={{ fontFamily: "'Syne', sans-serif", fontSize: "2.2rem", fontWeight: 800, color: "#e8e6f0" }}>{title}</h2>
+    <div>
+      <p style={{ color: "#7c3aed", fontWeight: 600, letterSpacing: 3, fontSize: "0.68rem", textTransform: "uppercase", marginBottom: "0.5rem" }}>{props.sub}</p>
+      <h2 className="section-title" style={{ fontFamily: "'Syne',sans-serif", fontSize: "2rem", fontWeight: 800, color: "#e8e6f0" }}>{props.title}</h2>
     </div>
   );
 }
  
-function ContactCard({ icon, label, value, href }) {
+function ContactCard(props) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="card" style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 14, padding: "1.2rem 1.8rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 220 }}>
-      <span style={{ fontSize: "1.4rem" }}>{icon}</span>
-      <div style={{ textAlign: "left" }}>
-        <div style={{ color: "#6b7280", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
-        <div style={{ color: "#c4b5fd", fontWeight: 500, fontSize: "0.85rem" }}>{value}</div>
+    <a href={props.href} target="_blank" rel="noopener noreferrer" className="card contact-card"
+      style={{ background: "#111118", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 14, padding: "1rem 1.4rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.7rem", minWidth: 200, flex: "1 1 200px" }}>
+      <span style={{ fontSize: "1.3rem" }}>{props.icon}</span>
+      <div style={{ textAlign: "left", overflow: "hidden" }}>
+        <div style={{ color: "#6b7280", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: 1 }}>{props.label}</div>
+        <div style={{ color: "#c4b5fd", fontWeight: 500, fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{props.value}</div>
       </div>
     </a>
   );
